@@ -4,14 +4,16 @@ import sys
 import getopt
 import bgapi_parser
 
-def usage(error) :
-    print('Error: %s'%(error))
-    print('Usage: %s [ --title <title> --elisp <filename> ] <xml-file>'%(sys.argv[0]))
+def usage(error=None) :
+    if None != error :
+        print('Error: %s'%(error))
+    print('Usage: %s --xapi <xapi-xml-file> [ -c ][ -r ][ -e ][ --octal ][ --decimal ][ --hex ]'%(sys.argv[0]))
     quit()
-    
+
+debug = False
 longopts = ['xapi=','octal','decimal','hex']
 options = {'mode':"events",'params':'params','radix':16}
-opts,params = getopt.getopt(sys.argv[1:],"hcer",longopts)
+opts,params = getopt.getopt(sys.argv[1:],"dhcer",longopts)
 for opt in opts :
     if '-h' == opt[0] :
         usage()
@@ -29,16 +31,28 @@ for opt,param in opts :
         options['params'] = 'returns'
     elif '-e' == opt :
         options['mode'] = 'events'
+    elif '-d' == opt :
+        debug = True
     else :
         print('Unexpected option: "%s"'%(opt))
 
 data = []
-for param in params :
-    if len(param) > 2 and '0x' == param[:2].lower() :
-        data.append(int(param[2:],16))
-    else :
-        data.append(int(param[2:],options['radix']))
-        
+if debug : print('params: %s'%(params.__str__()))
+if 0 == len(params) :
+    usage('missing data to parse')
+elif 1 == len(params) :
+    token = params[0] 
+    if len(token) & 1 :
+        usage('If data in single token, length must be even')
+    for i in range(len(token)>>1) :
+        data.append(int(token[i<<1:][:2],16))
+else :
+    for param in params :
+        if len(param) > 2 and '0x' == param[:2].lower() :
+            data.append(int(param[2:],16))
+        else :
+            data.append(int(param,options['radix']))
+if debug : print('data: %s'%(data.__str__()))        
 
 lc = bgapi_parser.BgapiParser(options['xapi'])
 
@@ -88,7 +102,7 @@ def parse_params(body, plist) :
         print('  ',datatype,p['name'],render(datatype,data,length))
         
 if data[1] != len(data) - 4 :
-    raise RuntimeError('Invalid lengh header:%d, data:%d'%(data[1],len(data)-4))
+    print('Invalid length header:%d, data:%d'%(data[1],len(data)-4))
 
 print('class: 0x%02x, %s: 0x%02x'%(data[2],options['mode'],data[3]))
 cls = lc.classes.get(data[2])

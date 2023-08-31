@@ -37,7 +37,7 @@ class BgapiParser :
             elif 'datatypes' == first.tag : continue
             else :
                 raise RuntimeError('Unhandled first.tag: %s'%(first.tag))
-        print(self.api['classes'])
+        #print(self.api['classes'])
         self.classes = {}
         for c in self.api['classes'] :
             ci = int(c['index'])
@@ -53,7 +53,7 @@ class BgapiParser :
             self.classes[ci]['commands'] = md
 
     def unpack_class(self, class_tree) :
-        print(class_tree)
+        #print(class_tree)
         contents = { 'name': class_tree.attrib['name'], 'commands':[], 'events':[], 'enums':[], 'defines':[], 'index':class_tree.attrib['index'] }
         for second in class_tree :
             if 'event' == second.tag :
