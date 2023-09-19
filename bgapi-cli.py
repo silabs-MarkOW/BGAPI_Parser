@@ -85,6 +85,14 @@ def render(t,d,s) :
         for i in range(4) :
             s += '%02x'%(d[3-i])
         return s
+    elif 'int16' == t :
+        value = 0
+        for i in range(2) :
+            value += d[i] << (i << 3)
+        sign = 1 << 15
+        if value & sign :
+            value -= sign
+        return '%+d'%value
     elif 'uint8array' == t :
         s = '{'
         for i in range(d[0]) :
