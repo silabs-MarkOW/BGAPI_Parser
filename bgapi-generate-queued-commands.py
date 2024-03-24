@@ -197,7 +197,8 @@ for key in keys :
 struct += '  };\n  sl_status_t result;\n};\n'
 fh = open('%s.h'%(args.basename ),'w')
 fh.write('#include <sl_status.h>\n')
-fh.write('#ifndef %s\n#define %s\n\n'%(args.basename.upper(),args.basename.upper()))
+define = args.basename.upper().replace('-','_')
+fh.write('#ifndef %s\n#define %s\n\n'%(define,define))
 fh.write('enum CMD_TYPE { '+', '.join(enums) + ' };\n')
 fh.write(structs)
 fh.write(struct)
