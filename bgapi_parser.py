@@ -29,13 +29,18 @@ class BgapiParser :
 
         for first in root :
             if 'class' == first.tag :
-                if 'mesh_' == first.attrib['name'][:5] : continue
-                if 'proxy_' == first.attrib['name'][:6] : continue
-                if 'cte' == first.attrib['name'][:3] : continue
+                #if 'mesh_' == first.attrib['name'][:5] : continue
+                #if 'proxy_' == first.attrib['name'][:6] : continue
+                #if 'cte' == first.attrib['name'][:3] : continue
                 if 'qualtester' == first.attrib['name'][:10] : continue
                 self.api['classes'].append(self.unpack_class(first))
-            elif 'datatypes' == first.tag : continue
+            elif 'datatypes' == first.tag :
+                if None != self.api.get('datatypes') :
+                    raise RuntimeError('Multiple datatypes tags')
+                self.api['datatypes'] = self.unpack_datatypes(first)
+                #print(self.api['datatypes'])
             else :
+                print(first)
                 raise RuntimeError('Unhandled first.tag: %s'%(first.tag))
         #print(self.api['classes'])
         self.classes = {}
@@ -52,6 +57,15 @@ class BgapiParser :
                 md[mi] = { 'name':m['name'],'params':m['params'],'returns':m.get('returns') }
             self.classes[ci]['commands'] = md
 
+    def unpack_datatypes(self,datatype_tree) :
+        db = {'base':{}, 'length':{}}
+        for second in datatype_tree :
+            key = second.attrib['name']
+            for akey in second.attrib :
+                if 'name' == akey : continue
+                db[akey][key] = second.attrib[akey]
+        return db
+                
     def unpack_class(self, class_tree) :
         #print(class_tree)
         contents = { 'name': class_tree.attrib['name'], 'commands':[], 'events':[], 'enums':[], 'defines':[], 'index':class_tree.attrib['index'] }

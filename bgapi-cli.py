@@ -64,6 +64,12 @@ keys.sort()
 #print(keys)
 
 def get_length(t,d) :
+    length = lc.api['datatypes']['length'][t]
+    if 'uint8array' == t :
+        return length + d[0]
+    if 'uint8array' == t :
+        return length + d[0] + (d[1] << 8)
+    return length
     length1 = ['uint8','int8']
     length2 = ['uint16','int16']
     length4 = ['uint32']
