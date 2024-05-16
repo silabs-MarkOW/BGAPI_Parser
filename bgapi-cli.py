@@ -9,21 +9,17 @@ def get_default_xapi() :
         return None
     return GSDK + '/protocol/bluetooth/api/sl_bt.xapi'
 
-if len(sys.argv) > 1 and '-v' == sys.argv[1] :
-    s2b_version()
-    quit()
-    
 parser = argparse.ArgumentParser()
 parser.add_argument('--xapi',default=get_default_xapi(),help='file describing API {GSDK}/protocol/bluetooth/api/sl_bt.xapi')
 origin = parser.add_mutually_exclusive_group(required=True)
-origin.add_argument('--host',nargs='+',help='data from host')
-origin.add_argument('--target',nargs='+',help='data from target')
-application = parser.add_mutually_exclusive_group()
+origin.add_argument('--host',nargs=nargs,help='data from host')
+origin.add_argument('--target',nargs=nargs,help='data from target')
 parser.add_argument('--octal',action='store_true',help='data is octal')
 parser.add_argument('--decimal',action='store_true',help='data is decimal')
 parser.add_argument('--hex',action='store_true',help='data is hex')
 parser.add_argument('--debug',action='store_true',help='show generally uninteresting info')
 args = parser.parse_args()
+
 options = {'mode':'commands','params':'params'}
 if args.decimal :
     options['radix'] = 10
