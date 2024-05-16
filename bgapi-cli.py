@@ -18,7 +18,7 @@ for opt in opts :
     if '-h' == opt[0] :
         usage()
 for opt,param in opts :
-    print(opt)
+    #print(opt)
     if '-h' == opt :
         continue
     elif '--xapi' == opt :
@@ -64,7 +64,7 @@ keys.sort()
 #print(keys)
 
 def get_length(t,d) :
-    length = lc.api['datatypes']['length'][t]
+    length = int(lc.api['datatypes']['length'][t])
     if 'uint8array' == t :
         return length + d[0]
     if 'uint8array' == t :
@@ -111,6 +111,7 @@ def parse_params(body, plist) :
     for p in plist :
         length = get_length(p['type'],body)
         datatype = p['datatype']
+        #print(length,body,type(length))
         data = body[:length]
         body = body[length:]    
         print('  ',datatype,p['name'],render(datatype,data,length))
