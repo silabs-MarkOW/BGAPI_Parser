@@ -1,60 +1,70 @@
-#! /bin/env python3
-
-import sys
-import getopt
+import argparse
 import bgapi_parser
+import os
+import sys
 
-def usage(error=None) :
-    if None != error :
-        print('Error: %s'%(error))
-    print('Usage: %s --xapi <xapi-xml-file> [ -c ][ -r ][ -e ][ --octal ][ --decimal ][ --hex ]'%(sys.argv[0]))
+def get_default_xapi() :
+    GSDK = os.environ.get('GSDK')
+    if None == GSDK :
+        return None
+    return GSDK + '/protocol/bluetooth/api/sl_bt.xapi'
+
+if len(sys.argv) > 1 and '-v' == sys.argv[1] :
+    s2b_version()
     quit()
-
-debug = False
-longopts = ['xapi=','octal','decimal','hex']
-options = {'mode':"events",'params':'params','radix':16}
-opts,params = getopt.getopt(sys.argv[1:],"dhcer",longopts)
-for opt in opts :
-    if '-h' == opt[0] :
-        usage()
-for opt,param in opts :
-    #print(opt)
-    if '-h' == opt :
-        continue
-    elif '--xapi' == opt :
-        options['xapi'] = param
-    elif '-c' == opt :
-        options['mode'] = 'commands'
-        options['params'] = 'params'
-    elif '-r' == opt :
-        options['mode'] = 'commands'
-        options['params'] = 'returns'
-    elif '-e' == opt :
-        options['mode'] = 'events'
-    elif '-d' == opt :
-        debug = True
-    else :
-        print('Unexpected option: "%s"'%(opt))
-
+    
+parser = argparse.ArgumentParser()
+parser.add_argument('--xapi',default=get_default_xapi(),help='file describing API {GSDK}/protocol/bluetooth/api/sl_bt.xapi')
+origin = parser.add_mutually_exclusive_group(required=True)
+origin.add_argument('--host',nargs='+',help='data from host')
+origin.add_argument('--target',nargs='+',help='data from target')
+application = parser.add_mutually_exclusive_group()
+parser.add_argument('--octal',action='store_true',help='data is octal')
+parser.add_argument('--decimal',action='store_true',help='data is decimal')
+parser.add_argument('--hex',action='store_true',help='data is hex')
+parser.add_argument('--debug',action='store_true',help='show generally uninteresting info')
+args = parser.parse_args()
+options = {'mode':'commands','params':'params'}
+if args.decimal :
+    options['radix'] = 10
+elif args.octal :
+    options['radix'] = 8
+else :
+    options['radix'] = 16
+    
+debug = args.debug
 data = []
-if debug : print('params: %s'%(params.__str__()))
-if 0 == len(params) :
-    usage('missing data to parse')
-elif 1 == len(params) :
-    token = params[0] 
+if debug : print(args)
+if args.host :
+    params = args.host
+else :
+    params = args.target
+    options['params'] = 'returns'
+    
+if 1 == len(params) :
+    token = params[0]
+    if args.decimal or args.octal :
+        raise RuntimeError('single token must be hex')
     if len(token) & 1 :
-        usage('If data in single token, length must be even')
+        raise RuntimeError('If data in single token, length must be even')
+    if '0x' == token[:2].lower() : token = token[2:]
     for i in range(len(token)>>1) :
         data.append(int(token[i<<1:][:2],16))
 else :
     for param in params :
         if len(param) > 2 and '0x' == param[:2].lower() :
             data.append(int(param[2:],16))
+        if len(param) > 2 and '0o' == param[:2].lower() :
+            data.append(int(param[2:],0))
         else :
             data.append(int(param,options['radix']))
-if debug : print('data: %s'%(data.__str__()))        
+if debug : print('data: %s'%(data.__str__()))
+print(data)
+if 0xa0 == data[0] :
+    options['mode'] = 'events'
+    options['params'] = 'params'
 
-lc = bgapi_parser.BgapiParser(options['xapi'])
+lc = bgapi_parser.BgapiParser(args.xapi)
 
 #print(lc.classes)
 keys = []
