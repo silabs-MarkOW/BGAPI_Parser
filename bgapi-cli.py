@@ -9,6 +9,7 @@ def get_default_xapi() :
         return None
     return GSDK + '/protocol/bluetooth/api/sl_bt.xapi'
 
+nargs = '+'
 parser = argparse.ArgumentParser()
 parser.add_argument('--xapi',default=get_default_xapi(),help='file describing API {GSDK}/protocol/bluetooth/api/sl_bt.xapi')
 origin = parser.add_mutually_exclusive_group(required=True)
@@ -111,7 +112,6 @@ def render(t,d,s) :
             s += ' %02x'%(d[1+i])
         return s + ' }'
     elif 'bd_addr' == t :
-        print('d:',d)
         d.reverse()
         return ':'.join(["%02x"%(b) for b in d])
     elif 'dbm' == t :
