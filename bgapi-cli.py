@@ -110,6 +110,12 @@ def render(t,d,s) :
         for i in range(d[0]) :
             s += ' %02x'%(d[1+i])
         return s + ' }'
+    elif 'bd_addr' == t :
+        print('d:',d)
+        d.reverse()
+        return ':'.join(["%02x"%(b) for b in d])
+    elif 'dbm' == t :
+        return "%.1f dBm"%(0.1*d[0])
     else :
         raise RuntimeError('%s(%d)'%(t,s))
     
