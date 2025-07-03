@@ -1,24 +1,26 @@
 import sys
 import getopt
 import bgapi_parser
-import Parse_Options
+#import Parse_Options
 import render_dump
+import bgapi_options
 
-cli = Parse_Options.CliParser()
+# #cli.add_option('rodata',(int,str),params="<size,name>",desc="generate <size> bytes sized variable called <name> in .rodata")
+# #cli.add_option('data',(int,str),params="<size,name>",desc="generate <size> bytes sized variable called <name> in .data")
+# #cli.add_option('binary-image',(str,str),params="<filename,name>",desc="place contents of <filename> in variable called <name> in .rodata")
+# cli.add_option('xapi',str,params="<xapi-file>",desc="file describing BGAPI, see $SDK/protocol/bluetooth/api/sl_bt.axpi")
+# cli.add_option('tx',str,params="<tx-label>",desc="label of the channel containing TX data from NCP target",default='TX')
+# cli.add_option('rx',str,params="<rx-label>",desc="label of the channel containing RX data from NCP target",default='RX')
 
-#cli.add_option('rodata',(int,str),params="<size,name>",desc="generate <size> bytes sized variable called <name> in .rodata")
-#cli.add_option('data',(int,str),params="<size,name>",desc="generate <size> bytes sized variable called <name> in .data")
-#cli.add_option('binary-image',(str,str),params="<filename,name>",desc="place contents of <filename> in variable called <name> in .rodata")
-cli.add_option('xapi',str,params="<xapi-file>",desc="file describing BGAPI, see $SDK/protocol/bluetooth/api/sl_bt.axpi")
-cli.add_option('tx',str,params="<tx-label>",desc="label of the channel containing TX data from NCP target",default='TX')
-cli.add_option('rx',str,params="<rx-label>",desc="label of the channel containing RX data from NCP target",default='RX')
+parser = bgapi_options.get_global_options()
+parser.add_argument('--tx',help="label of the channel containing TX data from NCP target",default='TX')
+parser.add_argument('--rx',help="label of the channel containing RX data from NCP target",default='RX')
+parser.add_argument('--csv',help="CSV file from Saleae containing ASYNC Serial analyzer data",required=True)
 
-options,params = cli.parse()
+# options,params = cli.parse()
+args = parser.parse_args()
 
-if len(params) != 1 :
-    cli.exit_help('expecting single parameter, <Saleae-capture-file>')
-
-filename = params[0]
+filename = args.csv
 
 fh = open(filename,'r')
 text = fh.read()
@@ -73,7 +75,7 @@ rx = BgapiStream()
 tx = BgapiStream()
 # rx.setDebug(True)
 
-lc = bgapi_parser.BgapiParser(options['xapi'])
+lc = bgapi_parser.BgapiParser(args.xapi)
 parser = render_dump.Renderer(lc)
 
 def dump(packet) :
@@ -85,7 +87,7 @@ def dump(packet) :
 setState('Start')
 for line in lines :
     tokens = line.split(',')
-    if len(tokens) < 6 : continue
+    if len(tokens) < 5 : continue
     if 'Start' == state :
         if 'name' == tokens[0] :
             setState('Ready')
@@ -97,9 +99,9 @@ for line in lines :
                 raise RuntimeError(line)
             channel = tokens[0][1:3]
             octet = int(tokens[4],16)
-            if 'RX' == channel :
+            if args.rx == channel :
                 packet = rx.process(octet)
-            elif 'TX' == channel :
+            elif args.tx == channel :
                 packet = tx.process(octet)
             if None == packet : continue
             if 'TX' == channel and 0xa0 == packet[0] :
