@@ -1,4 +1,4 @@
-BINS = bgapi-cli.py bgapi-generate-queued-commands.py
+BINS = bgapi-cli.py bgapi-generate-queued-commands.py bgapi-saleae.py
 LIBS = bgapi_parser.py
 
 default :
