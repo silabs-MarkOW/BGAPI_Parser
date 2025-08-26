@@ -1,9 +1,16 @@
 def get_length(t,d) :
-    length = int(lc.api['datatypes']['length'][t])
     if 'uint8array' == t :
-        return length + d[0]
-    if 'uint8array' == t :
-        return length + d[0] + (d[1] << 8)
+        return 1 + d[0]
+    if 'uint16array' == t :
+        return 1 + d[0] + (d[1] << 8)
+    value = lc.api['datatypes']['length'].get(t)
+    if None == value :
+        if 'sl_bt_' == t[:6] and '_t' == t[-2:] :
+            value = lc.api['datatypes']['length'].get(t[6:-2])
+            if None == value :
+                print(lc.api['datatypes']['length'])
+                raise RuntimeError(t)
+    length = int(value)
     return length
     length1 = ['uint8','int8']
     length2 = ['uint16','int16']
@@ -17,6 +24,7 @@ def get_length(t,d) :
     if 'uint8array' == t : return 1+d[0]
     raise RuntimeError(t)
 
+like_uint16 = ['uint16','characteristic','descriptor','attribute_handle','errorcode','uuid_16']
 def render(t,d,s) :
     if 1 == s :
         for tt in ['uint8','connection'] :
@@ -27,10 +35,17 @@ def render(t,d,s) :
             for i in range(4) :
                 s += '%02x'%(d[3-i])
             return s
-            
-    if 'uint16' == t or 'characteristic' == t : return '0x%02x%02x'%(d[1],d[0])
-    elif 'errorcode' == t : return '0x%02x%02x'%(d[1],d[0])
-    elif 'int16' == t :
+    if 2 == s :
+        for testt in like_uint16 :
+            if testt == t : return '0x%02x%02x'%(d[1],d[0])
+
+    if 'int8' == t :
+        value = d[0]
+        sign = 1 << 7
+        if value & sign :
+            value -= sign
+        return '%+d'%value
+    if 'int16' == t :
         value = 0
         for i in range(2) :
             value += d[i] << (i << 3)
@@ -43,6 +58,11 @@ def render(t,d,s) :
         for i in range(d[0]) :
             s += ' %02x'%(d[1+i])
         return s + ' }'
+    elif 'uint16array' == t :
+        s = '{'
+        for b in d[2:] :
+            s += ' %02x'%(b)
+        return s + ' }'        
     elif 'bd_addr' == t :
         d.reverse()
         return ':'.join(["%02x"%(b) for b in d])
